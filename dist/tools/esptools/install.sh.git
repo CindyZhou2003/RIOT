@@ -103,7 +103,7 @@ install_arch()
 
     TOOLS_DIR="${TOOLS_PATH}/${TARGET_ARCH}/${ESP32_GCC_RELEASE}"
 
-    URL_PATH="https://githubfast.com/espressif/crosstool-NG/releases/download"
+    URL_PATH="https://github.com/espressif/crosstool-NG/releases/download"
     URL_TGZ="${TARGET_ARCH}-${ESP32_GCC_VERSION_DOWNLOAD}-${OS}.tar.xz"
     URL="${URL_PATH}/${ESP32_GCC_RELEASE}/${URL_TGZ}"
 
@@ -128,7 +128,7 @@ install_openocd()
 
     TOOLS_DIR="${TOOLS_PATH}/openocd-esp32/${ESP32_OPENOCD_VERSION}"
 
-    URL_PATH="https://githubfast.com/espressif/openocd-esp32/releases/download"
+    URL_PATH="https://github.com/espressif/openocd-esp32/releases/download"
     URL_TGZ="openocd-esp32-${OS_OCD}-${ESP32_OPENOCD_VERSION_TGZ}.tar.gz"
     URL="${URL_PATH}/${ESP32_OPENOCD_VERSION}/${URL_TGZ}"
 
@@ -162,7 +162,7 @@ install_qemu()
 
     TOOLS_DIR="${TOOLS_PATH}/qemu-esp32/${ESP32_QEMU_VERSION}"
 
-    URL_PATH="https://githubfast.com/espressif/qemu/releases/download"
+    URL_PATH="https://github.com/espressif/qemu/releases/download"
     URL="${URL_PATH}/${ESP32_QEMU_VERSION}/${URL_TGZ}"
 
     echo "Creating directory ${TOOLS_DIR} ..." && \
@@ -195,7 +195,7 @@ install_gdb()
 
     TOOLS_DIR="${TOOLS_PATH}/${GDB_ARCH}/${GDB_VERSION}"
 
-    URL_PATH="https://githubfast.com/espressif/binutils-gdb/releases/download"
+    URL_PATH="https://github.com/espressif/binutils-gdb/releases/download"
     URL_TGZ="${GDB_ARCH}-${GDB_VERSION}-${OS}.tar.gz"
     URL="${URL_PATH}/esp-gdb-v${GDB_VERSION}/${URL_TGZ}"
 echo $URL_GET $URL

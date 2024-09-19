@@ -26,7 +26,9 @@ def main(args):
     if args.no_plot is False:
         plt.gray()
         plt.imshow(data.reshape(28, 28))
-        plt.show()
+        # plt.show()
+        plt.savefig('digit_plot.png')
+
 
 
 if __name__ == '__main__':

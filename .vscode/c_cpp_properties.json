@@ -4,7 +4,18 @@
             "name": "RIOT",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "compileCommands": "${workspaceFolder}/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "includePath": [
+                "${default}",
+                "/usr/include/linux",
+                "${workspaceFolder}/sys/include",
+                "${workspaceFolder}/drivers/include",
+                "${workspaceFolder}/build/pkg/esp32_sdk/components/hal/platform_port/include/hal",
+                "${workspaceFolder}/cpu/esp32/esp-idf/include/log",
+                "${workspaceFolder}/build/pkg/esp32_sdk/components/log/include",
+                "${workspaceFolder}/cpu/esp32/include"
+            ],
+            "compilerPath": "/usr/bin/gcc"
         }
     ],
     "version": 4
