@@ -1,0 +1,173 @@
+/*
+ * Copyright (C) 2021 Otto-von-Guericke-Universität Magdeburg
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @ingroup     examples
+ * @{
+ *
+ * @file
+ * @brief       Blinky application
+ *
+ * @author      Marian Buschsieweke <marian.buschsieweke@ovgu.de>
+ *
+ * @}
+ */
+
+#include <stdio.h>
+
+#include "clk.h"
+#include "board.h"
+#include "periph_conf.h"
+#include "timex.h"
+#include "ztimer.h"
+#include "periph/gpio.h"  
+#include "thread.h"
+#include "msg.h"
+#include "shell.h"
+// #include "xtimer.h"
+
+#define THREAD_STACKSIZE        (THREAD_STACKSIZE_IDLE)
+static char stack[THREAD_STACKSIZE];
+static char stack1[THREAD_STACKSIZE];
+
+static kernel_pid_t _led_pid;
+#define LED_MSG_TYPE_ISR     (0x3456)
+
+static void delay(int sleep_ms)
+{
+    if (IS_USED(MODULE_ZTIMER)) {
+        ztimer_sleep(ZTIMER_USEC, sleep_ms * US_PER_MS);
+    }
+    else {
+        /*
+         * As fallback for freshly ported boards with no timer drivers written
+         * yet, we just use the CPU to delay execution and assume that roughly
+         * 20 CPU cycles are spend per loop iteration.
+         *
+         * Note that the volatile qualifier disables compiler optimizations for
+         * all accesses to the counter variable. Without volatile, modern
+         * compilers would detect that the loop is only wasting CPU cycles and
+         * optimize it out - but here the wasting of CPU cycles is desired.
+         */
+        uint32_t loops = coreclk() / 20;
+        for (volatile uint32_t i = 0; i < loops; i++) { }
+    }
+}
+
+#define BLINK_GPIO GPIO12
+static uint8_t s_led_state = 0;
+static void blink_led(void)
+{
+    gpio_write(BLINK_GPIO, s_led_state);
+}
+
+static void configure_led(void)
+{
+    /* Set the GPIO as a push/pull output */
+    gpio_init(BLINK_GPIO, GPIO_OUT);
+}
+
+void blink_faster(int times, int delay_time)
+{
+    s_led_state = 0;
+    for (int i = 0; i < times * 2; ++i)
+    {
+        s_led_state = !s_led_state;
+        blink_led();
+        delay(delay_time / 2);
+    }
+    s_led_state = 0;
+}
+
+
+void blink(void)
+{
+    s_led_state = !s_led_state;
+    blink_led();
+}
+void *_led_thread(void *arg)
+{
+    (void) arg;
+    while(1){
+        printf("[LED_THREAD] WAIT\n");
+        msg_t msg;
+        msg_receive(&msg);
+        if (msg.type == LED_MSG_TYPE_ISR)
+        {
+            blink_faster(2, 100);
+            printf("[LED_THREAD]: LED start to work!!\n");
+        }
+    }
+}
+
+void *_sleep_thread(void *arg)
+{
+    uint16_t sleep_ms = 1000;
+    (void) arg;
+    while(1){
+        ztimer_sleep(ZTIMER_USEC, sleep_ms * US_PER_MS);
+        printf("[SLEEP_THREAD]: SLEEPFINISH\n");
+        msg_t msg;
+        msg.type = LED_MSG_TYPE_ISR;
+        if (msg_send(&msg, _led_pid) <= 0){
+            printf("[SLEEP_THREAD]: possibly lost interrupt.\n");
+        }
+        else{
+            printf("[SLEEP_THREAD]: Successfully set interrupt.\n");
+
+        }
+    }
+}
+int led_cmd(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+    blink_faster(1, 1000);
+    return 0;
+}
+static const shell_command_t shell_commands[] = {
+    { "led", "Control the led radio", led_cmd },
+    { NULL, NULL, NULL }
+};
+#ifndef  THREAD_1
+#define  THREAD_1 {no_wait, 5}
+#endif
+
+#ifndef  THREAD_2
+#define  THREAD_2 {no_wait, 5}
+#endif
+
+#ifndef  THREAD_3
+#define  THREAD_3 {no_wait, 5}
+#endif
+
+int main(void)
+{
+    configure_led();
+    blink_faster(10, 100);
+    _led_pid = thread_create(stack, sizeof(stack), THREAD_PRIORITY_MAIN - 2,
+                            THREAD_CREATE_STACKTEST, _led_thread, NULL,
+                            "led");
+    // kernel_pid_t *ppid = _led_pid;
+    if (_led_pid <= KERNEL_PID_UNDEF) {
+        printf("[MAIN] Creation of receiver thread failed\n");
+        return 1;
+    }
+    else
+    {
+        printf("[MAIN] LED_PID: %d\n", _led_pid);
+    }
+    thread_create(stack1, sizeof(stack1), THREAD_PRIORITY_MAIN - 1,
+                            THREAD_CREATE_STACKTEST, _sleep_thread, &_led_pid,
+                            "sleep");
+    printf("[Main] Initialization successful - starting the shell now\n");
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
+
+    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+    return 0;
+}
